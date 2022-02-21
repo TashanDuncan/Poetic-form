@@ -10,6 +10,5 @@
  */
 
 if( !defined('ABSPATH')) {
-    
     exit;
 }
