@@ -8,3 +8,8 @@
  * Text Domain: poetic-form
  * 
  */
+
+if( !defined('ABSPATH')) {
+    
+    exit;
+}
