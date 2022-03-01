@@ -25,6 +25,13 @@ class PoeticForm{
 
         // add shortcode
         add_shortcode( 'poetic-form', array($this, 'load_shortcode'));
+
+        //load js
+        add_action('wp_footer', array($this, 'load_scripts'));
+
+        // register rest api
+        add_action('rest_api_init', array($this, 'register_rest_api'));
+
     }
 
 
@@ -69,59 +76,123 @@ class PoeticForm{
 
     public function load_shortcode()
     {?>
-                <div class="row gx-4 gx-lg-5 justify-content-center mb-5">
-            <div class="col-lg-6">
-                <!-- * * * * * * * * * * * * * * *-->
-                <!-- * * Poetic Contact Form * *-->
-                <!-- * * * * * * * * * * * * * * *-->
-                <form id="contactForm">
-                    <!-- Name input-->
-                    <div class="form-floating mb-3">
-                        <input class="form-control" id="name" name="name" type="text" placeholder="Enter your name..." required/>
-                        <label for="name">Full name</label>
-                        <div class="invalid-feedback">A name is required.</div>
-                    </div>
-                    <!-- Email address input-->
-                    <div class="form-floating mb-3">
-                        <input class="form-control" id="email" name="email" type="email" placeholder="name@example.com" required/>
-                        <label for="email">Email address</label>
-                        <div class="invalid-feedback">An email is required.</div>
-                        <div class="invalid-feedback">Email is not valid.</div>
-                    </div>
-                    <!-- Message input-->
-                    <div class="form-floating mb-3">
-                        <textarea class="form-control" id="message" name="message" type="text" placeholder="Enter your message here..."
-                            style="height: 10rem" required></textarea>
-                        <label for="message">Message</label>
-                        <div class="invalid-feedback">A message is required.
-                        </div>
-                    </div>
-                    <!-- Submit success message-->
-                    <!---->
-                    <!-- This is what your users will see when the form-->
-                    <!-- has successfully submitted-->
-                    <div class="d-none" id="submitSuccessMessage">
-                        <div class="text-center mb-3">
-                            <div class="fw-bolder">Form submission successful!</div>
-                        </div>
-                    </div>
-                    <!-- Submit error message-->
-                    <!---->
-                    <!-- This is what your users will see when there is-->
-                    <!-- an error submitting the form-->
-                    <div class="d-none" id="submitErrorMessage">
-                        <div class="text-center text-danger mb-3">Error sending message!</div>
-                    </div>
-                    <!-- Submit Button-->
-                    <div class="d-grid"><button class="btn btn-primary btn-xl" id="submitButton"
-                            type="submit">Submit</button></div>
-                </form>
+<div class="row gx-4 gx-lg-5 justify-content-center mb-5">
+    <div class="col-lg-6">
+        <!-- * * * * * * * * * * * * * * *-->
+        <!-- * * Poetic Contact Form * *-->
+        <!-- * * * * * * * * * * * * * * *-->
+        <form id="poetic-contact-form">
+            <!-- Name input-->
+            <div class="form-floating mb-3">
+                <input class="form-control" id="name" name="name" type="text" placeholder="Enter your name..."
+                    required />
+                <label for="name">Full name</label>
+                <div class="invalid-feedback">A name is required.</div>
             </div>
-        </div>
-        
+            <!-- Email address input-->
+            <div class="form-floating mb-3">
+                <input class="form-control" id="email" name="email" type="email" placeholder="name@example.com"
+                    required />
+                <label for="email">Email address</label>
+                <div class="invalid-feedback">An email is required.</div>
+                <div class="invalid-feedback">Email is not valid.</div>
+            </div>
+            <!-- Message input-->
+            <div class="form-floating mb-3">
+                <textarea class="form-control" id="message" name="message" type="text"
+                    placeholder="Enter your message here..." style="height: 10rem" required></textarea>
+                <label for="message">Message</label>
+                <div class="invalid-feedback">A message is required.
+                </div>
+            </div>
+            <!-- Submit success message-->
+            <!---->
+            <!-- This is what your users will see when the form-->
+            <!-- has successfully submitted-->
+            <div class="d-none" id="submitSuccessMessage">
+                <div class="text-center mb-3">
+                    <div class="fw-bolder">Form submission successful!</div>
+                </div>
+            </div>
+            <!-- Submit error message-->
+            <!---->
+            <!-- This is what your users will see when there is-->
+            <!-- an error submitting the form-->
+            <div class="d-none" id="submitErrorMessage">
+                <div class="text-center text-danger mb-3">Error sending message!</div>
+            </div>
+            <!-- Submit Button-->
+            <div class="d-grid"><button class="btn btn-primary btn-xl" id="submitButton" type="submit">Submit</button>
+            </div>
+        </form>
+    </div>
+</div>
 
-    <?php }
 
+<?php }
+
+    public function load_scripts()
+    {?>
+<script>
+
+    var nonce = '<?php echo wp_create_nonce('wp_rest');?>';
+
+(function($) {
+    $('#poetic-contact-form').submit(function(event) {
+
+        event.preventDefault();
+       
+       var form = $(this).serialize();
+       console.log(form)
+
+       $.ajax({
+
+            method:'post',
+            url:'<?php echo get_rest_url(null, 'poetic-contact-form/v1/send-email');?>',
+            headers: { 'X-WP-Nonce': nonce },
+            data: form
+
+       })
+
+
+    })
+})(jQuery)
+</script>
+<?php }
+
+public function register_rest_api()
+{
+    register_rest_route('poetic-contact-form/v1', 'send-email', array(
+
+        'methods' => 'POST',
+        'callback' => array($this, 'handle_contact_form')
+
+    ));
 }
+
+public function handle_contact_form($data)
+{
+    $headers = $data->get_headers();
+    $params = $data->get_params();
+    $nonce = $headers['x_wp_nonce'][0];
+    
+    if(!wp_verify_nonce($nonce, 'wp_rest'))
+    {
+        return new WP_REST_Response('Message not sent', 422);
+    }
+
+    $post_id = wp_insert_post([
+        'post_type' => 'poetic_form',
+        'post_title' => 'Contact enqiry',
+        'post_status' => 'publish'
+    ]);
+
+    if($post_id)
+    {
+        return new WP_REST_Response('Thank you for your email', 200);
+    }
+}
+}
+
 
 new PoeticForm;
