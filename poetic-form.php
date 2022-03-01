@@ -32,6 +32,9 @@ class PoeticForm{
         // register rest api
         add_action('rest_api_init', array($this, 'register_rest_api'));
 
+
+        //send email on publish
+        add_action('publish_poetic_form', array($this, 'post_notification'));
     }
 
 
@@ -134,25 +137,26 @@ class PoeticForm{
     public function load_scripts()
     {?>
 <script>
-
-    var nonce = '<?php echo wp_create_nonce('wp_rest');?>';
+var nonce = '<?php echo wp_create_nonce('wp_rest');?>';
 
 (function($) {
     $('#poetic-contact-form').submit(function(event) {
 
         event.preventDefault();
-       
-       var form = $(this).serialize();
-       console.log(form)
 
-       $.ajax({
+        var form = $(this).serialize();
+        console.log(form)
 
-            method:'post',
-            url:'<?php echo get_rest_url(null, 'poetic-contact-form/v1/send-email');?>',
-            headers: { 'X-WP-Nonce': nonce },
+        $.ajax({
+
+            method: 'post',
+            url: '<?php echo get_rest_url(null, 'poetic-contact-form/v1/send-email');?>',
+            headers: {
+                'X-WP-Nonce': nonce
+            },
             data: form
 
-       })
+        })
 
 
     })
@@ -177,11 +181,14 @@ public function handle_contact_form($data)
     $nonce = $headers['x_wp_nonce'][0];
     
     echo json_encode($params);
+    
+
 
     if(!wp_verify_nonce($nonce, 'wp_rest'))
     {
         return new WP_REST_Response('Message not sent', 422);
     }
+
 
     $post_id = wp_insert_post([
         'post_type' => 'poetic_form',
@@ -193,12 +200,27 @@ public function handle_contact_form($data)
         )
     ]);
 
+    $recipient  = "tashanduncan1994@gmail.com";
+    $subject = "message from {$params['name']}";
+    $message = $params['message'];
+    $headers = array(
+        'Content-Type: text/html; charset=UTF-8',
+        "Reply-To: {$params['name']} <{$params['email']}>"
+    );
+
+    $mailResult = false;
+    $mailResult = wp_mail($recipient, $subject, $message, $headers);
+    echo $mailResult;
+
     if($post_id)
     {
         return new WP_REST_Response('Thank you for your email', 200);
     }
     //email user with information
+    
 }
+
+
 }
 
 
