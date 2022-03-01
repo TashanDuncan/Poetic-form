@@ -40,7 +40,7 @@ class PoeticForm{
         $args = array(
             'public' => true,
             'has archive' => true,
-            'supports' => array('title'),
+            'supports' => array('title', 'custom-fields'),
             'exclude_from_search' => true,
             'publicly_queryable' => false,
             'capability' => 'manage_options',
@@ -176,6 +176,8 @@ public function handle_contact_form($data)
     $params = $data->get_params();
     $nonce = $headers['x_wp_nonce'][0];
     
+    echo json_encode($params);
+
     if(!wp_verify_nonce($nonce, 'wp_rest'))
     {
         return new WP_REST_Response('Message not sent', 422);
@@ -183,14 +185,19 @@ public function handle_contact_form($data)
 
     $post_id = wp_insert_post([
         'post_type' => 'poetic_form',
-        'post_title' => 'Contact enqiry',
-        'post_status' => 'publish'
+        'post_title' => "message from {$params['name']}" ,
+        'post_status' => 'publish',
+        'meta_input' => array(
+            'Email' => $params['email'],
+            'Message' => $params['message']
+        )
     ]);
 
     if($post_id)
     {
         return new WP_REST_Response('Thank you for your email', 200);
     }
+    //email user with information
 }
 }
 
