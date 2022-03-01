@@ -108,15 +108,7 @@ class PoeticForm{
                 <div class="invalid-feedback">A message is required.
                 </div>
             </div>
-            <!-- Submit success message-->
-            <!---->
-            <!-- This is what your users will see when the form-->
-            <!-- has successfully submitted-->
-            <div class="d-none" id="submitSuccessMessage">
-                <div class="text-center mb-3">
-                    <div class="fw-bolder">Form submission successful!</div>
-                </div>
-            </div>
+
             <!-- Submit error message-->
             <!---->
             <!-- This is what your users will see when there is-->
@@ -128,6 +120,15 @@ class PoeticForm{
             <div class="d-grid"><button class="btn btn-primary btn-xl" id="submitButton" type="submit">Submit</button>
             </div>
         </form>
+                    <!-- Submit success message-->
+            <!---->
+            <!-- This is what your users will see when the form-->
+            <!-- has successfully submitted-->
+            <div class="d-none" id="submitSuccessMessage">
+                <div class="text-center mb-3">
+                    <div class="fw-bolder">Submission successful! I will be in touch as soon as possible &#128522; </div>
+                </div>
+            </div>
     </div>
 </div>
 
@@ -142,6 +143,8 @@ var nonce = '<?php echo wp_create_nonce('wp_rest');?>';
 (function($) {
     $('#poetic-contact-form').submit(function(event) {
 
+        var success = $('#submitSuccessMessage');
+        var formDiv = $('#poetic-contact-form');
         event.preventDefault();
 
         var form = $(this).serialize();
@@ -158,6 +161,8 @@ var nonce = '<?php echo wp_create_nonce('wp_rest');?>';
 
         })
 
+        formDiv.addClass('d-none')
+        success.removeClass('d-none')
 
     })
 })(jQuery)
