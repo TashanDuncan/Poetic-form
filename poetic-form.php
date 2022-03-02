@@ -205,7 +205,7 @@ public function handle_contact_form($data)
         )
     ]);
 
-    $recipient  = "tashanduncan1994@gmail.com";
+    $recipient  = "safiya-06@hotmail.co.uk";
     $subject = "message from {$params['name']}";
     $message = $params['message'];
     $headers = array(
